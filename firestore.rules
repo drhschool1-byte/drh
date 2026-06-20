@@ -1,0 +1,145 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'salemjalaal1@gmail.com' ||
+        request.auth.token.email == 'drhschool1@gmail.com' ||
+        request.auth.token.email == 'admin@school.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email != null && exists(/databases/$(database)/documents/supervisors/$(request.auth.token.email)))
+      );
+    }
+
+    function isTeacher() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/teachers/$(request.auth.uid)) ||
+        (request.auth.token.email != null && exists(/databases/$(database)/documents/teachers/$(request.auth.token.email))) ||
+        (request.auth.token.email != null && exists(/databases/$(database)/documents/teachers/$(request.auth.token.email.lower())))
+      );
+    }
+
+    // Helper to check if signed-in user is a teacher assigned to standard grade
+    function isTeacherOfGrade(grade) {
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/teachers/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.grade == grade) ||
+        (request.auth.token.email != null && 
+         exists(/databases/$(database)/documents/teachers/$(request.auth.token.email)) &&
+         get(/databases/$(database)/documents/teachers/$(request.auth.token.email)).data.grade == grade) ||
+        (request.auth.token.email != null && 
+         exists(/databases/$(database)/documents/teachers/$(request.auth.token.email.lower())) &&
+         get(/databases/$(database)/documents/teachers/$(request.auth.token.email.lower())).data.grade == grade)
+      );
+    }
+
+    // Validation for student
+    function isValidStudent(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 512 &&
+             data.seatNumber is string && data.seatNumber.size() > 0 && data.seatNumber.size() <= 128 &&
+             data.grade is string && data.grade.size() > 0;
+    }
+
+    // Students Collection Rules
+    match /students/{studentId} {
+      // Students searching needs list and get
+      allow read: if true;
+
+      // Only Admin and Teacher of that student's grade can create or write
+      allow create: if isAdmin() || (
+        isTeacherOfGrade(request.resource.data.grade) && 
+        isValidStudent(request.resource.data)
+      );
+
+      allow update: if isAdmin() || (
+        isTeacherOfGrade(resource.data.grade) && 
+        isTeacherOfGrade(request.resource.data.grade) && 
+        isValidStudent(request.resource.data)
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // Teachers Collection Rules
+    match /teachers/{teacherId} {
+      allow read: if true; // Allowed for validation & UI assignment displays
+      allow create, update: if isAdmin() || (
+        isSignedIn() && 
+        request.auth.token.email != null && 
+        (teacherId == request.auth.uid || teacherId.lower() == request.auth.token.email.lower()) && 
+        request.resource != null && 
+        request.resource.data.email.lower() == request.auth.token.email.lower()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Grade Settings Collection Rules
+    match /grade_settings/{settingId} {
+      allow read: if true; // Publicly readable to calculate pass/fail criteria and rules UI
+      allow write: if isAdmin();
+    }
+
+    // Admins Collection Rules
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Validation for complaints
+    function isValidComplaint(data) {
+      return data.studentName is string && data.studentName.size() > 0 && data.studentName.size() <= 512 &&
+             (!('seatNumber' in data) || (data.seatNumber is string && data.seatNumber.size() <= 128)) &&
+             data.gradeId is string && data.gradeId.size() > 0 &&
+             data.details is string && data.details.size() > 0 && data.details.size() <= 4096;
+    }
+
+    // Complaints Collection Rules
+    match /complaints/{complaintId} {
+      allow create: if isValidComplaint(request.resource.data);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Validation for registration requests
+    function isValidRegistration(data) {
+      return data.studentName is string && data.studentName.size() > 0 && data.studentName.size() <= 512 &&
+             data.parentName is string && data.parentName.size() > 0 && data.parentName.size() <= 512 &&
+             data.gradeId is string && data.gradeId.size() > 0 &&
+             data.parentPhone is string && data.parentPhone.size() > 0 && data.parentPhone.size() <= 128;
+    }
+
+    // Registrations Collection Rules
+    match /registrations/{registrationId} {
+      allow create: if isValidRegistration(request.resource.data);
+      allow read: if true; // Allowed for prospective parents to inspect their status
+      allow update, delete: if isAdmin();
+    }
+
+    // Custom Form Fields Configuration Collection
+    match /custom_form_fields/{fieldId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Supervisors Collection Rules
+    match /supervisors/{supervisorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Archived Students Collection Rules
+    match /archived_students/{studentId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

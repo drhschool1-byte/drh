@@ -1,0 +1,8 @@
+{
+  "name": "Remix: School Management System",
+  "description": "نظام مدرسي متكامل لإدارة الطلاب، الدرجات، الحضور والغياب، مع لوحة تحكم للمدير والمعلم وعرض النتائج والشهادات للطلاب والزوار باللغة العربية بالكامل.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

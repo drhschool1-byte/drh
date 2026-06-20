@@ -1,0 +1,141 @@
+{
+  "entities": {
+    "student": {
+      "title": "Student Record",
+      "description": "Represents a student, their academic performance, attendance and results metadata.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Auto-generated Firestore ID or custom ID" },
+        "name": { "type": "string", "description": "Full name of the student" },
+        "seatNumber": { "type": "string", "description": "Unique registration or seat number used for public search" },
+        "grade": { "type": "string", "description": "School Grade Level (e.g. الصف الأول، الصف الثاني)" },
+        "presentDays": { "type": "number", "description": "Number of days present" },
+        "absentDays": { "type": "number", "description": "Number of days absent" },
+        "attendancePercentage": { "type": "number", "description": "Calculated attendance percentage" },
+        "subjectGrades": { "type": "object", "description": "Grades for mapped subjects, key is subject ID, value is numeric score" },
+        "totalPoints": { "type": "number", "description": "Total points accumulated across all subjects" },
+        "resultStatus": { "type": "string", "description": "Status of the student: ناجح, راسب" },
+        "reason": { "type": "string", "description": "Reason for result status (e.g. failing a subject or poor attendance)" }
+      },
+      "required": ["name", "seatNumber", "grade", "presentDays", "absentDays"]
+    },
+    "teacher": {
+      "title": "Teacher Profile",
+      "description": "Represents a school teacher authorized to manage grades for a particular grade.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Auth user UID" },
+        "name": { "type": "string", "description": "Teacher full name" },
+        "email": { "type": "string", "description": "Teacher authorized email address" },
+        "grade": { "type": "string", "description": "Grade assigned to the teacher" }
+      },
+      "required": ["name", "email", "grade"]
+    },
+    "grade_setting": {
+      "title": "Grade Levels Configuration",
+      "properties": {
+        "id": { "type": "string", "description": "Grade ID (same as the grade identifier)" },
+        "gradeName": { "type": "string", "description": "Display name of grade" },
+        "subjects": { "type": "array", "description": "List of subjects and their min passing grades" },
+        "minAttendance": { "type": "number", "description": "Minimum attendance percentage required (0-100)" }
+      },
+      "required": ["id", "gradeName", "subjects", "minAttendance"],
+      "type": "object"
+    },
+    "administrator": {
+      "title": "School Administrator",
+      "properties": {
+        "id": { "type": "string", "description": "Auth UID or email identifier" },
+        "email": { "type": "string", "description": "Admin email" }
+      },
+      "required": ["email"],
+      "type": "object"
+    },
+    "complaint": {
+      "title": "Student Appeal",
+      "description": "Represents an academic result appeal or complaint registered by a student.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique appeal record ID" },
+        "studentName": { "type": "string", "description": "Arabic triple name of the student" },
+        "seatNumber": { "type": "string", "description": "Unique registration seat number" },
+        "gradeId": { "type": "string", "description": "Index or ID of student grade" },
+         "complaintSubject": { "type": "string", "description": "Subject category or heading" },
+        "details": { "type": "string", "description": "Literal detail or context explaining the issue" },
+        "contactPhone": { "type": "string", "description": "Mobile or phone number for prompt follow-up" },
+        "date": { "type": "string", "description": "Date and timestamp of registration" },
+        "status": { "type": "string", "description": "Resolving status of general appeal" }
+      },
+      "required": ["studentName", "gradeId", "details", "date", "status"]
+    },
+    "registration": {
+      "title": "New Student Admission Request",
+      "description": "Represents a prospective new student registration submitted by parents for review.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique registration request ID" },
+        "studentName": { "type": "string", "description": "Full Arabic name of the candidate student" },
+        "parentName": { "type": "string", "description": "Full Arabic name of the parent or guardian" },
+        "gradeId": { "type": "string", "description": "Target Grade Id candidate wants to enroll into" },
+        "birthDate": { "type": "string", "description": "Birth date of student" },
+        "nationalId": { "type": "string", "description": "National ID number of candidate student" },
+        "parentPhone": { "type": "string", "description": "Active phone number of parent or guardian" },
+        "address": { "type": "string", "description": "Living address of student" },
+        "gender": { "type": "string", "description": "Gender of student: ذكر/أنثى" },
+        "submissionDate": { "type": "string", "description": "Timestamp of submission" },
+        "status": { "type": "string", "description": "Status of the registration request: قيد المراجعة، مقبول مبدئياً، مرفوض" },
+        "notes": { "type": "string", "description": "Admin notes regarding the request evaluation" },
+        "customFields": { "type": "object", "description": "Custom dynamic form fields added by admin and filled by user" }
+      },
+      "required": ["studentName", "parentName", "gradeId", "parentPhone", "gender", "submissionDate", "status"]
+    },
+    "custom_form_field": {
+      "title": "Custom Dynamic Form Field",
+      "description": "An additional input field configured by block administrators for registration or complaint forms.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique code for this field" },
+        "section": { "type": "string", "description": "The form section: registration or complaints" },
+        "label": { "type": "string", "description": "Display label in Arabic" },
+        "type": { "type": "string", "description": "Field input type e.g. text, number, date, textarea, checkbox" },
+        "required": { "type": "boolean", "description": "Whether the input is compulsory" },
+        "placeholder": { "type": "string", "description": "Input guide placeholder text" }
+      },
+      "required": ["id", "section", "label", "type", "required"]
+    }
+  },
+  "firestore": {
+    "students": {
+      "schema": "student",
+      "description": "Public and editable list of school student records."
+    },
+    "teachers": {
+      "schema": "teacher",
+      "description": "Authorized teacher logins and grade permissions."
+    },
+    "grade_settings": {
+      "schema": "grade_setting",
+      "description": "School rules, subjects, and pass rates defined for each grade level."
+    },
+    "admins": {
+      "schema": "administrator",
+      "description": "School system super administrators."
+    },
+    "complaints": {
+      "schema": "complaint",
+      "description": "Academic appeals and student administration feedback grievances."
+    },
+    "registrations": {
+      "schema": "registration",
+      "description": "Prospecting new student registration and admission applications."
+    },
+    "custom_form_fields": {
+      "schema": "custom_form_field",
+      "description": "Configurable custom fields added dynamically by Admin for onboarding or appeal forms."
+    },
+    "archived_students": {
+      "schema": "student",
+      "description": "School graduates and archived student records."
+    }
+  }
+}
