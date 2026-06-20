@@ -1497,9 +1497,9 @@ export const StudentPublic: React.FC = () => {
                     <h4 className="font-extrabold text-slate-800 text-sm sm:text-base">القسم 2: بيانات الطالب الشخصية (من واقع شهادة الميلاد)</h4>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {/* Name */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 sm:col-span-2">
                       <label className="block text-xs sm:text-sm font-bold text-slate-700">
                         اسم الطالب الرباعي واللقب: <span className="text-red-500">*</span>
                       </label>
@@ -1524,6 +1524,24 @@ export const StudentPublic: React.FC = () => {
                         required
                         value={regForm.birthDate}
                         onChange={(e) => setRegForm({ ...regForm, birthDate: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#0e9e9e] text-xs sm:text-sm text-right font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* National ID */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs sm:text-sm font-bold text-slate-700">
+                        الرقم القومي / رقم الهوية للطالب: <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={20}
+                        value={regForm.nationalId}
+                        onChange={(e) => setRegForm({ ...regForm, nationalId: convertArabicNumerals(e.target.value) })}
+                        placeholder="أدخل الرقم القومي للطالب (10 خانات على الأقل)"
                         className="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#0e9e9e] text-xs sm:text-sm text-right font-mono"
                       />
                     </div>
