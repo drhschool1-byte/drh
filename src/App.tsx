@@ -41,71 +41,21 @@ export default function App() {
     setAuthLoading(true);
     const trimmedUser = username.trim().toLowerCase();
     
-    // Check if it is a real email syntax
-    const isEmail = trimmedUser.includes('@');
-    
-    if (!isPlaceholder && (isEmail || (trimmedUser === 'admin' && password === '1234'))) {
-      // Attempt real Firebase email/password auth first
-      const emailToTry = isEmail ? trimmedUser : 'drhschool1@gmail.com';
-      try {
-        dbService.setSimulated(false);
-        const result = await authService.signInWithEmail(emailToTry, password);
-        if (result && result.user) {
-          setCurrentUser(result.user);
-          await resolveUserRole(result.user.email, result.user.uid);
-          setUsername('');
-          setPassword('');
-          setAuthLoading(false);
-          return;
-        }
-      } catch (err: any) {
-        console.warn("Real Firebase email auth failed, falling back to local simulation:", err.message);
-        if (isEmail) {
-          setLoginError('فشل تسجيل الدخول السحابي: يرجى التحقق من البريد الإلكتروني وكلمة المرور من لوحة التحكم، أو تفعيل الخيار من إعدادات Firebase Auth.');
-          setAuthLoading(false);
-          return;
-        }
-      }
-    }
-
-    if (trimmedUser === 'admin' && password === '1234') {
+    if (trimmedUser === 'm7md' && password === '1234') {
       const adminUser = {
-        uid: 'admin_credential_uid_1234',
-        email: 'drhschool1@gmail.com', // Maps to the school admin email
-        displayName: 'المدير العام المعتمد',
+        uid: 'admin_credential_uid_m7md',
+        email: 'drhschool1@gmail.com', // Map to general admin email for cloud security rules compatibility
+        displayName: 'المدير محمد',
         emailVerified: true
       };
-      dbService.setSimulated(true);
+      // Keep online simulation status if it is not a placeholder, or run in appropriate mode
+      dbService.setSimulated(isPlaceholder);
       setCurrentUser(adminUser);
       setUserRole('admin');
       setCurrentTab('admin');
       setUsername('');
       setPassword('');
     } else {
-      // Check if matches teachers lists
-      try {
-        const teachers = await dbService.getTeachers();
-        const found = teachers.find(t => t.email.trim().toLowerCase() === trimmedUser);
-        if (found && password === '1234') {
-          dbService.setSimulated(true);
-          const teacherUser = {
-            uid: found.id || 'teacher_fallback_uid',
-            email: found.email,
-            displayName: found.name,
-            emailVerified: true
-          };
-          setCurrentUser(teacherUser);
-          setCurrentTeacher(found);
-          setUserRole('teacher');
-          setCurrentTab('teacher');
-          setUsername('');
-          setPassword('');
-          setAuthLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.warn("Teacher credentials fallback check failed:", e);
-      }
       setLoginError('اسم المستخدم أو كلمة المرور غير صحيحة!');
     }
     setAuthLoading(false);
@@ -320,7 +270,7 @@ export default function App() {
                 <AppCard title="تسجيل دخول الكادر التعليمي" icon={<Lock className="w-5 h-5" />}>
                   <div className="space-y-6">
                     <p className="text-sm text-slate-500 leading-relaxed text-center">
-                      قم بتسجيل الدخول باستخدام حساب المدير العام أو المعلم لترصيد الدرجات وإدارة المدرسة.
+                      قم بتسجيل الدخول باستخدام حساب المدير العام لإدارة المدرسة والتحكم.
                     </p>
 
                     <form onSubmit={handleCredentialsLogin} className="space-y-4">
@@ -333,14 +283,14 @@ export default function App() {
                       
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1.5" htmlFor="usernameInput">
-                          اسم المستخدم أو البريد الإلكتروني
+                          اسم المستخدم
                         </label>
                         <input
                           id="usernameInput"
                           type="text"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
-                          placeholder="مثال: admin"
+                          placeholder="m7md"
                           className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#0e9e9e] focus:ring-1 focus:ring-[#0e9e9e] text-right transition-all text-sm font-medium"
                           required
                         />
@@ -371,49 +321,8 @@ export default function App() {
                       </button>
                     </form>
 
-                    <div className="relative flex items-center justify-center my-4">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-slate-200"></div>
-                      </div>
-                      <span className="relative px-3 bg-white text-xs font-bold text-slate-400">أو</span>
-                    </div>
-
-                    {/* Google Sign In button */}
-                    <button
-                      onClick={handleSignInGoogle}
-                      className="w-full py-2.5 px-4 bg-white border border-slate-300 hover:border-[#0e9e9e] text-slate-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all cursor-pointer shadow-sm text-sm"
-                    >
-                      <LogIn className="w-4 h-4 text-red-500" />
-                      الدخول الفوري عبر حساب Google
-                    </button>
-
-                    {/* Demo entries to support testing */}
-                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <button
-                        onClick={() => handleDemoLogin('admin')}
-                        className="flex-1 py-1.5 px-3 bg-[#e0f2f1] text-[#00695c] hover:bg-[#b2dfdb] rounded-lg text-xs font-bold transition-all cursor-pointer text-center"
-                      >
-                        دخول تجريبي (مدير)
-                      </button>
-                      <button
-                        onClick={() => handleDemoLogin('teacher')}
-                        className="flex-1 py-1.5 px-3 bg-[#fff8e1] text-[#f57f17] hover:bg-[#ffecb3] rounded-lg text-xs font-bold transition-all cursor-pointer text-center"
-                      >
-                        دخول تجريبي (معلم)
-                      </button>
-                    </div>
-
                   </div>
                 </AppCard>
-                <div className="mt-4 text-right bg-slate-50 rounded-xl p-3.5 border border-slate-200 text-xs text-slate-600 font-semibold space-y-2">
-                  <div className="text-center font-bold text-slate-700 border-b border-slate-200 pb-1.5 mb-1.5">خيارات الدخول للسحابة (أونلاين):</div>
-                  <p className="text-[#0e9e9e] leading-relaxed">
-                    🟢 <strong className="text-slate-800">الدخول السحابي الكامل (أونلاين):</strong> يُرجى الضغط على زر <strong className="text-[#077d7d]">"الدخول الفوري عبر حساب Google"</strong> باستخدام بريدك الإلكتروني المسجل <strong className="font-mono text-emerald-700">{'drhschool1@gmail.com'}</strong>.
-                  </p>
-                  <p className="text-amber-700 leading-relaxed">
-                    🟡 <strong className="text-slate-800">الدخول المحلي للتجربة (أوفلاين):</strong> يمكنك استخدام الحساب الفوري اسم المستخدم <strong className="font-mono">{'admin'}</strong> بكلمة المرور <strong className="font-mono">{'1234'}</strong>، وسيعمل في وضع المحاكاة المحلية.
-                  </p>
-                </div>
               </div>
             )}
 
